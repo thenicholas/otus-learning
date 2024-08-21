@@ -1,0 +1,23 @@
+{
+    "require": {
+        "guzzlehttp/guzzle": "^7.9",
+        "wikimedia/composer-merge-plugin": "dev-master"
+    },
+    "extra": {
+        "merge-plugin": {
+            "require": [
+                "../bitrix/composer-bx.json"
+            ]
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "wikimedia/composer-merge-plugin": true
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "TheNicholas\\": "lib/"
+        }
+    }
+}
