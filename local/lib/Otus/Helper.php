@@ -1,6 +1,6 @@
 <?php
 
-namespace TheNicholas;
+namespace Otus;
 
 class Helper
 {

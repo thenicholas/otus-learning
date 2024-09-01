@@ -1,9 +1,8 @@
 <?php
 
-namespace TheNicholas\Logger;
+namespace Otus\Logger;
 
 use Bitrix\Main\Diag\ExceptionHandlerFormatter;
-use Bitrix\Main\Diag\ExceptionHandlerLog;
 use Bitrix\Main\Diag\FileExceptionHandlerLog;
 
 class OtusLogger extends FileExceptionHandlerLog
