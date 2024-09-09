@@ -65,55 +65,55 @@ class OtusDoctorsListComponent extends CBitrixComponent
 
     private function getDoctors(array $params): array
     {
-
         $iblock = \Bitrix\Iblock\Iblock::wakeUp($this->arParams['IBLOCK_ID'])->getEntityDataClass();
 
         $result = $iblock::query()
             ->setSelect($params['select'])
+            ->addSelect('PROCEDURES.ELEMENT.NAME')
+            ->addSelect('PROCEDURES.ELEMENT.COLOR.VALUE')
             ->setOrder($params['sort'])
             ->setFilter($params['filter'])
             ->fetchCollection();
 
-        //$result = Bitrix\Main\ORM\Query\QueryHelper::decompose($query);
-
         $arItems = [];
 
-        foreach ($result as $key => $item) {
+        foreach ($result as $key => $doctor) {
             foreach (self::$fields as $field) {
-                $arItems[$key][$field] = $item->get($field);
+                $arItems[$key][$field] = $doctor->get($field);
             }
 
             foreach (self::$properties as $property) {
                 switch ($property['TYPE']) {
                     case 'E':
-                        $valuesCollection = $item->get($property['CODE']);
-                        $arValues = [];
-                        foreach ($valuesCollection as $value) {
-                            if ($value->getElement()) {
-                                $arValues[] = $value->getElement()->getName();
-                                $propertyValues = $value->getElement()->get('COLOR');
-                            }
-                            $arItems[$key][$property['CODE']] = implode(', ', $arValues);
-                        }
                         break;
                     default:
-                        $arItems[$key][$property['CODE']] = $item->get($property['CODE'])->getValue();
-
+                        $arItems[$key][$property['CODE']] = $doctor->get($property['CODE'])->getValue();
                 }
             }
 
-/*            $procedures = $item->get($property['CODE']);
-            if ($procedures) {
-                $arProcedures = [];
-                foreach ($procedures as $procedure) {
-                    if ($procedure->getElement()) {
-                        $arProcedures[] = $procedure->getElement()->getName();
-                    }
-                    $arItems[$key][$property['CODE']] = implode(', ', $arProcedures);
-                }
-            }*/
-        }
+            $procedures = $doctor->getProcedures();
+            $procedureNames = [];
 
+            foreach ($procedures as $procedure) {
+                $procedureName = $procedure->getElement()->getName();
+                $colors = $procedure->getElement()->getColor();
+
+                $colorValues = [];
+
+                foreach ($colors as $color) {
+                    $colorValues[] = $color->getValue();
+                }
+
+                $colorsHtml = array_reduce($colorValues, function ($string, $color) {
+                    $string .= "<span style='background-color: {$color}; width: 10px; height: 10px; margin-right: 4px; position: relative; top: 0px; display: inline-block;'></span>";
+                    return $string;
+                }, '');
+
+                $procedureNames[] = $colorsHtml . $procedureName;
+            }
+
+            $arItems[$key]['PROCEDURES'] = implode(', ', $procedureNames);
+        }
 
         return $arItems;
     }
@@ -139,7 +139,9 @@ class OtusDoctorsListComponent extends CBitrixComponent
 
             foreach ($fieldsAndProperties as $column) {
                 if ($column === 'NAME') {
-                    $value = '<a href="' . htmlspecialcharsEx($viewUrl) . '" target="_self">' . $item['NAME'] . '</a>';
+                    $value = '<a href="' . htmlspecialcharsEx(
+                            $viewUrl
+                        ) . '" target="_self">' . $item['NAME'] . '</a>';
                 } else {
                     $value = $item[$column];
                 }
@@ -160,7 +162,7 @@ class OtusDoctorsListComponent extends CBitrixComponent
 
         foreach ($props as $key => $value) {
             if (in_array($key, array_keys(self::$properties))) {
-                $result[$key. '.VALUE'] = $value;
+                $result[$key . '.VALUE'] = $value;
             } else {
                 $result[$key] = $value;
             }
@@ -168,14 +170,15 @@ class OtusDoctorsListComponent extends CBitrixComponent
         return $result;
     }
 
-    private static function prepareSelectParams(): array
+    private
+    static function prepareSelectParams(): array
     {
         $result = [];
 
         foreach (self::$properties as $property) {
             switch ($property['TYPE']) {
                 case 'E':
-                    $result[] = $property['CODE'] . '.ELEMENT';
+                    //$result[] = $property['CODE'] . '.ELEMENT';
                     break;
                 default:
                     $result [] = $property['CODE'];
@@ -296,8 +299,9 @@ class OtusDoctorsListComponent extends CBitrixComponent
         return array_merge($fieldNames, $propertiesNames);
     }
 
-    private function getPropertiesFromParams(mixed $properties): array
-    {
+    private function getPropertiesFromParams(
+        mixed $properties
+    ): array {
         $properties = PropertyTable::getList([
             'select' => ['ID', 'CODE', 'PROPERTY_TYPE', 'USER_TYPE'],  // Указываем поля, которые нужно выбрать
             'filter' => [
@@ -315,8 +319,6 @@ class OtusDoctorsListComponent extends CBitrixComponent
             ];
         }
 
-        return  $arProperties;
+        return $arProperties;
     }
-
-
 }
